@@ -1,0 +1,80 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Корень репозитория hyperspectrus-processing
+#
+# Пакетом не является: файл описывает workspace для uv и хранит общие настройки
+# инструментов, чтобы правила у контракта, набора проверок и заготовки пакета
+# были одинаковыми.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+[project]
+name = "hyperspectrus-processing"
+version = "0.1.0"
+description = "Разработка пакетов с алгоритмами обработки для HyperSpectRus"
+readme = "README.md"
+# 3.11 - версия Python на рабочем месте врача и на приборе. Алгоритм,
+# написанный под более новую, туда не поедет.
+requires-python = ">=3.11"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "ruff>=0.9",
+    "mypy>=1.14",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = [
+    "packages/*",
+    "template/hsr-proc-myalgo",
+]
+
+[tool.uv.sources]
+hsr-proc-base = { workspace = true }
+hsr-proc-conformance = { workspace = true }
+# Заготовка пакета подключается как член workspace: так её точка входа видна
+# проверкам, и в CI сразу видно, что заготовка остаётся рабочей.
+hsr-proc-myalgo = { workspace = true }
+
+# ── Линтер и форматтер ───────────────────────────────────────────────────────
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+# Зеркало контракта приводится в порядок в монорепозитории: форматирование его
+# здесь разошлось бы с источником и уронило бы сверку зеркала.
+extend-exclude = ["packages/hsr-proc-base"]
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "UP", "RUF", "D"]
+ignore = [
+    # Комментарии и докстринги написаны по-русски, и эти правила помечают
+    # каждую кириллическую букву, похожую на латинскую.
+    "RUF001",
+    "RUF002",
+    "RUF003",
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "pep257"
+
+[tool.ruff.format]
+quote-style = "double"
+
+# ── Тесты ────────────────────────────────────────────────────────────────────
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = "-ra --strict-markers"
+# Заготовка пакета сюда не входит намеренно: её алгоритм не написан, и числовые
+# проверки на ней обязаны падать. В CI она проверяется отдельным шагом по
+# метке `contract`.
+testpaths = ["packages", "tests"]
+
+# ── Проверка типов ───────────────────────────────────────────────────────────
+[tool.mypy]
+python_version = "3.11"
+strict = true
+ignore_missing_imports = true
+exclude = ["/tests/", "packages/hsr-proc-base"]

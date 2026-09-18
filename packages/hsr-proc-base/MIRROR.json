@@ -1,0 +1,21 @@
+{
+  "источник": "packages/hsr-proc-base",
+  "коммит": "d0d61ceecfeee6652a7d1cc9957267d23eeb5e5a",
+  "собрано": "2026-09-18",
+  "файлы": {
+    "README.md": "73920c1789903077037526c073a2739088ffa9dc962af3abe08c4ee60defbe41",
+    "pyproject.toml": "d02f1be0476f7a9ada4d1d0d31f9fb7ade6d5e8ecbc34996a8f7d0a8fa2efb95",
+    "src/hsr_proc/__init__.py": "bd361e5dddf5795462836353174dc9ef2183430d0372f7bee9ed4ac954c49f39",
+    "src/hsr_proc/__main__.py": "4664ef87b15eae3fedbe481673952b95f65f0d5e263ba6f15566d1d38a46ee9a",
+    "src/hsr_proc/contract.py": "cba1b8aa5b43a4517811b4817db2321d4ef552346a00f6eae625f5bf296d1dd3",
+    "src/hsr_proc/errors.py": "17fea8e943e5db3ccd3fe992884d66f0356f325a4adc5b004a787aad7fe80093",
+    "src/hsr_proc/loading.py": "8d559e9e2a128db777ca87e09d32e232af20769d9bfdd79ebf5a0bfa1abf0af8",
+    "src/hsr_proc/models.py": "8d7a6c2c43c12a7a8155a475d0d364fadc45d50ea4f01a89e669b7848b80cf90",
+    "src/hsr_proc/py.typed": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "src/hsr_proc/registry.py": "26cf74c70bef068742962cb6ee6c0bae2680520c40d0de9aaaf2f5b2afc8fe44",
+    "tests/conftest.py": "4624af1df6a092b3d0dc29f12a2be5d59bff5e6101a0a37d83d2a22443d1976d",
+    "tests/test_loading.py": "086a3e0a2cf3095548c402601705c854ec482b6778bfc242a76cc93828e1af65",
+    "tests/test_models.py": "823ee87027a3b48d42e48ff02761b00443f03fe9bee93e2a8fd50a3f0a5b6c3e",
+    "tests/test_registry.py": "e274090e968ef36e435ace75dc3e6ef6ba2f87395585b70d5f8155fa22a60202"
+  }
+}

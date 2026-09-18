@@ -1,0 +1,47 @@
+# Проверка самого репозитория.
+#
+# Здесь проверяется не чужой алгоритм, а то, чем его будут проверять: набор
+# приёмки прогоняется на заведомо правильной реализации и на подопытных с
+# внесёнными нарушениями, а заготовка пакета - на уровне `contract`.
+
+name: Проверка
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 3.11 - версия на рабочем месте врача и на приборе, она обязательна.
+        # Остальные - чтобы набор не разошёлся с окружением исследователя.
+        python: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Установить uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Поставить зависимости
+        run: uv sync --all-packages
+
+      - name: Линтер
+        run: uv run ruff check .
+
+      - name: Форматирование
+        run: uv run ruff format --check .
+
+      - name: Проверка типов
+        run: uv run mypy packages/hsr-proc-conformance/src template/hsr-proc-myalgo/src tools
+
+      - name: Тесты набора приёмки
+        run: uv run pytest
+
+      - name: Заготовка пакета проходит обязательный уровень
+        run: uv run hsr-proc-check hsr-proc-myalgo --level contract
