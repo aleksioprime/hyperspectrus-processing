@@ -37,7 +37,11 @@ jobs:
       - name: Форматирование
         run: uv run ruff format --check .
 
+      # Только на 3.11: проверка типов ведётся для целевой версии рабочего
+      # места, и на более новых интерпретаторах mypy разбирает их стабы
+      # правилами 3.11. Проверять один и тот же код трижды всё равно незачем.
       - name: Проверка типов
+        if: matrix.python == '3.11'
         run: uv run mypy packages/hsr-proc-conformance/src template/hsr-proc-myalgo/src tools
 
       - name: Тесты набора приёмки
