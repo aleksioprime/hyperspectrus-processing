@@ -5,7 +5,7 @@
 кладёт рядом карты в PNG и показатели в JSON.
 
     uv run hsr-proc-run --synthetic --out out
-    uv run hsr-proc-run ../datasets/real/пример --reference ../datasets/reference.json
+    uv run hsr-proc-run ../datasets/real/jpeg --reference ../references/hsr-main-reference.json
 
 Кадры раскладываются так же, как их пишет прибор: ``<каталог>/jpeg/1/450nm.jpg``
 или просто ``<каталог>/450nm.jpg``. Файлы DNG не читаются - для них алгоритму
@@ -112,14 +112,35 @@ def _matrix(path: Path | None, cube: SpectralCube) -> OverlapMatrix:
         return data.overlap(wavelengths=cube.wavelengths_nm[: len(data.WAVELENGTHS)])
 
     document = json.loads(path.read_text(encoding="utf-8"))
+    if document.get("format") != "hyperspectrus-reference":
+        raise ValueError("это не файл справочника HyperSpectRus")
+
+    models = document.get("models")
+    if not isinstance(models, list) or len(models) != 1:
+        raise ValueError("файл справочника должен содержать ровно одну модель прибора")
+
     chromophores = tuple(
         Chromophore(symbol=item["symbol"], name=item.get("name", ""))
         for item in document["chromophores"]
     )
+    spectra = models[0]["spectra"]
+    wavelengths = tuple(int(item["wavelength_nm"]) for item in spectra)
+    try:
+        values = [
+            [float(item["overlaps"][chromophore.symbol]) for chromophore in chromophores]
+            for item in spectra
+        ]
+    except (KeyError, TypeError) as error:
+        raise ValueError("матрица перекрытий в справочнике заполнена не полностью") from error
+
+    missing = sorted(set(cube.wavelengths_nm) - set(wavelengths))
+    if missing:
+        raise ValueError(f"в справочнике нет длин волн из серии: {missing}")
+
     return OverlapMatrix(
-        wavelengths_nm=tuple(int(item) for item in document["wavelengths_nm"]),
+        wavelengths_nm=wavelengths,
         chromophores=chromophores,
-        values=np.asarray(document["values"], dtype=np.float32),
+        values=np.asarray(values, dtype=np.float32),
     )
 
 

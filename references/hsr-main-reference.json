@@ -1,0 +1,79 @@
+{
+  "format": "hyperspectrus-reference",
+  "version": 1,
+  "chromophores": [
+    {
+      "symbol": "HbO2",
+      "name": "Оксигемоглобин"
+    },
+    {
+      "symbol": "Hb",
+      "name": "Дезоксигемоглобин"
+    }
+  ],
+  "models": [
+    {
+      "name": "HSR-TEST-8",
+      "description": "Тестовая модель на восемь длин волн для проверки связки прибор - рабочее место. Коэффициенты справочные, для диагностики не применяются.",
+      "reference_version": "test-1",
+      "spectra": [
+        {
+          "wavelength_nm": 450,
+          "overlaps": {
+            "HbO2": 62816.0,
+            "Hb": 103292.0
+          }
+        },
+        {
+          "wavelength_nm": 517,
+          "overlaps": {
+            "HbO2": 26630.0,
+            "Hb": 32780.0
+          }
+        },
+        {
+          "wavelength_nm": 671,
+          "overlaps": {
+            "HbO2": 291.0,
+            "Hb": 2795.0
+          }
+        },
+        {
+          "wavelength_nm": 775,
+          "overlaps": {
+            "HbO2": 690.0,
+            "Hb": 1190.0
+          }
+        },
+        {
+          "wavelength_nm": 803,
+          "overlaps": {
+            "HbO2": 830.0,
+            "Hb": 758.0
+          }
+        },
+        {
+          "wavelength_nm": 851,
+          "overlaps": {
+            "HbO2": 1058.0,
+            "Hb": 693.0
+          }
+        },
+        {
+          "wavelength_nm": 888,
+          "overlaps": {
+            "HbO2": 1128.0,
+            "Hb": 735.0
+          }
+        },
+        {
+          "wavelength_nm": 939,
+          "overlaps": {
+            "HbO2": 1214.0,
+            "Hb": 693.0
+          }
+        }
+      ]
+    }
+  ]
+}
