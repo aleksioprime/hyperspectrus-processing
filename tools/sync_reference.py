@@ -14,8 +14,12 @@ import shutil
 import sys
 from pathlib import Path
 
-REFERENCE = Path("references/hsr-main-reference.json")
-LEGACY_REFERENCE = "hsr-test-8.json"
+REFERENCE = Path("references/hsr-example.json")
+
+#: Прежние имена файла. Остаться в приложении они не должны: рабочее место
+#: загрузит любой справочник из каталога, и два файла одной модели - это два
+#: набора коэффициентов, между которыми никто не выбирал.
+LEGACY_REFERENCES = ("hsr-test-8.json", "hsr-main-reference.json")
 
 
 def main() -> int:
@@ -39,9 +43,10 @@ def main() -> int:
 
     destination = destination_directory / source.name
     shutil.copyfile(source, destination)
-    legacy = destination_directory / LEGACY_REFERENCE
-    if legacy != destination and legacy.is_file():
-        legacy.unlink()
+    for name in LEGACY_REFERENCES:
+        legacy = destination_directory / name
+        if legacy != destination and legacy.is_file():
+            legacy.unlink()
     print(f"конфигурация обновлена: {destination}")
     return 0
 
