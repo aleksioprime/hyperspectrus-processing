@@ -9,9 +9,9 @@
 Она предназначена только для проверки файлового запуска:
 
 ```bash
-uv run hsr-proc-run datasets/example --reference references/hsr-example.json --out out
-uv run hsr-proc-run datasets/example/jpeg/2 --reference references/hsr-example.json --out out/example-2
-uv run hsr-proc-run datasets/example/jpeg/3 --reference references/hsr-example.json --out out/example-3
+uv run hsr-proc-run datasets/example --out out
+uv run hsr-proc-run datasets/example/jpeg/2 --out out/example-2
+uv run hsr-proc-run datasets/example/jpeg/3 --out out/example-3
 ```
 
 Набор не является физически откалиброванной мультиспектральной съёмкой и не подходит для оценки числовой или медицинской точности алгоритма. Для числовой приёмки используется обратимый набор из `hsr_proc_conformance.data`.

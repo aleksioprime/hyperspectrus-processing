@@ -10,6 +10,10 @@
 Кадры раскладываются так же, как их пишет прибор: ``<каталог>/jpeg/1/450nm.jpg``
 или просто ``<каталог>/450nm.jpg``. Файлы DNG не читаются - для них алгоритму
 нужны собственные зависимости.
+
+Справочник коэффициентов берётся из ``references`` рядом с репозиторием, если
+не указан ``--reference``: это тот же файл, который уходит в приложение, и
+набирать путь к нему каждый раз незачем.
 """
 
 from __future__ import annotations
@@ -52,7 +56,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--reference",
         type=Path,
-        help="файл справочника: длины волн, хромофоры и коэффициенты перекрытия",
+        help="файл справочника; по умолчанию берётся из каталога references репозитория",
     )
     parser.add_argument("--out", type=Path, default=Path("out"), help="куда сложить результат")
     parser.add_argument("--sigma", type=float, default=1.0, help="сглаживание перед выделением")
@@ -64,7 +68,7 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         cube = _cube(args)
-        matrix = _matrix(args.reference, cube)
+        matrix = _matrix(args.reference, cube, synthetic=args.synthetic)
         processor = get_processor(args.processor)
     except (ProcessingError, OSError, ValueError) as error:
         print(f"Не удалось подготовить данные: {error}", file=sys.stderr)
@@ -105,11 +109,40 @@ def _cube(args: argparse.Namespace) -> SpectralCube:
     return load_cube(discover_frames(nested if nested.is_dir() else series))
 
 
-def _matrix(path: Path | None, cube: SpectralCube) -> OverlapMatrix:
-    """Прочитать справочник или взять синтетический."""
+def find_reference(start: Path | None = None) -> Path | None:
+    """Найти справочник коэффициентов вверх по дереву каталогов.
+
+    Файл лежит в ``references`` репозитория и уходит в приложение как есть.
+    Набирать путь к нему при каждом прогоне незачем, поэтому он ищется сам.
+    """
+    current = (start or Path.cwd()).resolve()
+    for directory in (current, *current.parents):
+        каталог = directory / "references"
+        if not каталог.is_dir():
+            continue
+        основной = каталог / "hsr-example.json"
+        if основной.is_file():
+            return основной
+        файлы = sorted(каталог.glob("*.json"))
+        if len(файлы) == 1:
+            return файлы[0]
+    return None
+
+
+def _matrix(path: Path | None, cube: SpectralCube, *, synthetic: bool = False) -> OverlapMatrix:
+    """Прочитать справочник: указанный, найденный рядом или синтетический."""
+    if path is None and synthetic:
+        # Синтетическая серия построена по этим же коэффициентам, и считать её
+        # чужими значило бы сверять ответ не с тем, из чего он получен.
+        return data.overlap()
+
     if path is None:
-        print("Справочник не задан: взяты синтетические коэффициенты из набора проверок")
-        return data.overlap(wavelengths=cube.wavelengths_nm[: len(data.WAVELENGTHS)])
+        path = find_reference()
+        if path is None:
+            raise ValueError(
+                "справочник не найден рядом с репозиторием - укажите его: --reference <файл>"
+            )
+        print(f"Справочник: {path}")
 
     document = json.loads(path.read_text(encoding="utf-8"))
     if document.get("format") != "hyperspectrus-reference":

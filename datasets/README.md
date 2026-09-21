@@ -36,14 +36,14 @@ datasets/example/
 Имя файла содержит длину волны в нанометрах - по нему кадр и попадает в нужный слой куба. Читаются `jpg`, `png`, `tif`, `bmp`; файлы `dng` контракт не разбирает, для них алгоритму нужны собственные зависимости.
 
 ```bash
-uv run hsr-proc-run datasets/example --reference references/hsr-example.json --out out
+uv run hsr-proc-run datasets/example --out out
 ```
 
 Команда выше обрабатывает первое наблюдение. Последующие наблюдения можно запустить отдельно, передав путь прямо к их каталогу:
 
 ```bash
-uv run hsr-proc-run datasets/example/jpeg/2 --reference references/hsr-example.json --out out/example-2
-uv run hsr-proc-run datasets/example/jpeg/3 --reference references/hsr-example.json --out out/example-3
+uv run hsr-proc-run datasets/example/jpeg/2 --out out/example-2
+uv run hsr-proc-run datasets/example/jpeg/3 --out out/example-3
 ```
 
 Это изображения искусственного силиконового фантома, созданные генеративной моделью. Они проверяют чтение файлов и позволяют показать результат команды, но не подтверждают числовую или медицинскую точность алгоритма.
@@ -51,7 +51,7 @@ uv run hsr-proc-run datasets/example/jpeg/3 --reference references/hsr-example.j
 Настоящие кадры кладутся в `datasets/real/jpeg/`. Содержимое этого каталога игнорируется Git, поэтому локальные снимки не попадут в коммит. Запуск:
 
 ```bash
-uv run hsr-proc-run datasets/real/jpeg --reference references/hsr-example.json --out out/real
+uv run hsr-proc-run datasets/real/jpeg --out out/real
 ```
 
 Снимки пациентов не попадают в репозиторий ни при каких условиях, даже обезличенные: такой набор передаётся отдельно и по договорённости.

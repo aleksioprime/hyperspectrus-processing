@@ -6,8 +6,9 @@ import json
 from pathlib import Path
 
 import numpy as np
+import pytest
 from hsr_proc.models import SpectralCube
-from hsr_proc_conformance.runner import _matrix
+from hsr_proc_conformance.runner import _matrix, find_reference
 
 ROOT = Path(__file__).resolve().parent.parent
 REFERENCE = ROOT / "references" / "hsr-example.json"
@@ -46,3 +47,15 @@ def test_runner_читает_формат_рабочего_места() -> None:
     assert matrix.wavelengths_nm == WAVELENGTHS
     assert matrix.symbols == ("HbO2", "Hb")
     assert matrix.values.shape == (8, 2)
+
+
+def test_справочник_находится_без_указания(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Путь к справочнику не набирают руками: он лежит в репозитории один.
+
+    Прежде без ``--reference`` подставлялись синтетические коэффициенты на
+    четыре длины волны, и прогон на восьмиканальной серии падал с жалобой на
+    матрицу - искать причину приходилось не там, где она была.
+    """
+    monkeypatch.chdir(SERIES / "1")
+
+    assert find_reference() == REFERENCE
