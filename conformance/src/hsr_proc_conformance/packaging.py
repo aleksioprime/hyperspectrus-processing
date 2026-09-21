@@ -119,14 +119,16 @@ def _check_entry(entry: metadata.EntryPoint) -> list[Finding]:
 
     if not isinstance(processor, Processor):
         missing = [
-            member for member in ("name", "version", "process") if not hasattr(processor, member)
+            required
+            for required in ("name", "version", "process")
+            if not hasattr(processor, required)
         ]
         findings.append(
             Finding(
                 False,
                 REQUIRED,
                 "объект не соответствует контракту Processor",
-                f"не хватает членов: {', '.join(missing) or 'подпись process не совпадает'}",
+                f"не хватает: {', '.join(missing) or 'подпись process не совпадает'}",
             )
         )
         return findings
