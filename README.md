@@ -10,20 +10,22 @@ cd hyperspectrus-processing
 uv sync --all-packages
 ```
 
-Расчёт пишется в
+Расчёт живёт в
 [`packages/hsr-proc-algo/src/hsr_proc_algo/processor.py`](packages/hsr-proc-algo/src/hsr_proc_algo/processor.py). Имя пакета, модуль, точка входа и имя реализации `algo`
-уже согласованы с рабочим местом — менять их не нужно.
+согласованы с рабочим местом - менять их не нужно, всё остальное можно.
 
 ```bash
 uv run python -m hsr_proc                         # пакет виден приложению
-uv run hsr-proc-check hsr-proc-algo --level contract
-uv run hsr-proc-check hsr-proc-algo               # полная приёмка
+uv run hsr-proc-check hsr-proc-algo               # приёмка: 24 проверки и вердикт
 uv run hsr-proc-run --synthetic --out out         # карты и metrics.json
 ```
 
-Исходная реализация возвращает пустые карты правильного вида. Уровень
-`contract` на ней проходит, числовые проверки ожидаемо падают до реализации
-расчёта.
+Здесь лежит тот самый расчёт, который сегодня работает в рабочем месте врача:
+оптическая плотность, решение системы по матрице коэффициентов, карта THb,
+выделение очага порогом Отсу и коэффициент s. Он проходит приёмку целиком, и
+это отправная точка исследования: любое изменение сразу видно на фоне рабочего
+поведения. Переписывать всё сразу не нужно - можно заменить сегментацию,
+оставив восстановление концентраций, и наоборот.
 
 ## Структура
 
@@ -215,8 +217,8 @@ uv run python tools/sync_algo.py ../hyperspectrus
 по правилам из [`datasets/README.md`](datasets/README.md) и не фиксируются в
 Git. Снимки пациентов не должны попадать в этот репозиторий.
 
-Рабочая конфигурация `HSR-TEST-8` хранится в
-[`references/hsr-main-reference.json`](references/hsr-main-reference.json). В отличие от
+Рабочая конфигурация `HSR-EXAMPLE` хранится в
+[`references/hsr-example.json`](references/hsr-example.json). В отличие от
 контракта, здесь главным является этот репозиторий: исследователи подбирают
 коэффициенты, меняют `reference_version`, проверяют алгоритм и передают точную
 копию в приложение:

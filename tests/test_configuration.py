@@ -10,7 +10,7 @@ from hsr_proc.models import SpectralCube
 from hsr_proc_conformance.runner import _matrix
 
 ROOT = Path(__file__).resolve().parent.parent
-REFERENCE = ROOT / "references" / "hsr-main-reference.json"
+REFERENCE = ROOT / "references" / "hsr-example.json"
 SERIES = ROOT / "datasets" / "example" / "jpeg"
 WAVELENGTHS = (450, 517, 671, 775, 803, 851, 888, 939)
 

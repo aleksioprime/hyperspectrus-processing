@@ -2,7 +2,7 @@
 
 Три последовательных наблюдения искусственного силиконового фантома находятся
 в каталогах `jpeg/1`, `jpeg/2` и `jpeg/3`. В каждом наблюдении есть восемь
-каналов из конфигурации `HSR-TEST-8`: `450`, `517`, `671`, `775`, `803`, `851`,
+каналов из конфигурации `HSR-EXAMPLE`: `450`, `517`, `671`, `775`, `803`, `851`,
 `888` и `939 нм`. Серия создана генеративной моделью и не содержит фотографий
 пациента.
 
@@ -13,9 +13,9 @@
 Она предназначена только для проверки файлового запуска:
 
 ```bash
-uv run hsr-proc-run datasets/example --reference references/hsr-main-reference.json --out out
-uv run hsr-proc-run datasets/example/jpeg/2 --reference references/hsr-main-reference.json --out out/example-2
-uv run hsr-proc-run datasets/example/jpeg/3 --reference references/hsr-main-reference.json --out out/example-3
+uv run hsr-proc-run datasets/example --reference references/hsr-example.json --out out
+uv run hsr-proc-run datasets/example/jpeg/2 --reference references/hsr-example.json --out out/example-2
+uv run hsr-proc-run datasets/example/jpeg/3 --reference references/hsr-example.json --out out/example-3
 ```
 
 Набор не является физически откалиброванной мультиспектральной съёмкой и не

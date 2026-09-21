@@ -5,7 +5,7 @@
 кладёт рядом карты в PNG и показатели в JSON.
 
     uv run hsr-proc-run --synthetic --out out
-    uv run hsr-proc-run ../datasets/real/jpeg --reference ../references/hsr-main-reference.json
+    uv run hsr-proc-run ../datasets/real/jpeg --reference ../references/hsr-example.json
 
 Кадры раскладываются так же, как их пишет прибор: ``<каталог>/jpeg/1/450nm.jpg``
 или просто ``<каталог>/450nm.jpg``. Файлы DNG не читаются - для них алгоритму

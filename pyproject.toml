@@ -64,10 +64,7 @@ quote-style = "double"
 [tool.pytest.ini_options]
 minversion = "8.0"
 addopts = "-ra --strict-markers"
-# Пакет алгоритма сюда не входит намеренно: его расчёт ещё не написан, и числовые
-# проверки на нём обязаны падать. В CI он проверяется отдельным шагом по
-# метке `contract`.
-testpaths = ["packages/hsr-proc-base", "tests"]
+testpaths = ["packages", "tests"]
 
 # ── Проверка типов ───────────────────────────────────────────────────────────
 [tool.mypy]

@@ -1,6 +1,8 @@
 [project]
 name = "hsr-proc-algo"
-version = "0.1.0"
+# Версия продолжает ту, что работает в приложении: по ней различают выпуски
+# расчёта, и назад она не идёт.
+version = "1.0.0"
 description = "Алгоритм восстановления концентраций хромофоров для HyperSpectRus"
 requires-python = ">=3.11"
 dependencies = [

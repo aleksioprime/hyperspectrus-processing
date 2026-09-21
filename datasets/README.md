@@ -37,15 +37,15 @@ datasets/example/
 Имя файла содержит длину волны в нанометрах - по нему кадр и попадает в нужный слой куба. Читаются `jpg`, `png`, `tif`, `bmp`; файлы `dng` контракт не разбирает, для них алгоритму нужны собственные зависимости.
 
 ```bash
-uv run hsr-proc-run datasets/example --reference references/hsr-main-reference.json --out out
+uv run hsr-proc-run datasets/example --reference references/hsr-example.json --out out
 ```
 
 Команда выше обрабатывает первое наблюдение. Последующие наблюдения можно
 запустить отдельно, передав путь прямо к их каталогу:
 
 ```bash
-uv run hsr-proc-run datasets/example/jpeg/2 --reference references/hsr-main-reference.json --out out/example-2
-uv run hsr-proc-run datasets/example/jpeg/3 --reference references/hsr-main-reference.json --out out/example-3
+uv run hsr-proc-run datasets/example/jpeg/2 --reference references/hsr-example.json --out out/example-2
+uv run hsr-proc-run datasets/example/jpeg/3 --reference references/hsr-example.json --out out/example-3
 ```
 
 Это изображения искусственного силиконового фантома, созданные генеративной
@@ -56,7 +56,7 @@ uv run hsr-proc-run datasets/example/jpeg/3 --reference references/hsr-main-refe
 игнорируется Git, поэтому локальные снимки не попадут в коммит. Запуск:
 
 ```bash
-uv run hsr-proc-run datasets/real/jpeg --reference references/hsr-main-reference.json --out out/real
+uv run hsr-proc-run datasets/real/jpeg --reference references/hsr-example.json --out out/real
 ```
 
 Снимки пациентов не попадают в репозиторий ни при каких условиях, даже
@@ -65,7 +65,7 @@ uv run hsr-proc-run datasets/real/jpeg --reference references/hsr-main-reference
 ## Конфигурация
 
 Серия соответствует рабочей тестовой конфигурации
-[`references/hsr-main-reference.json`](../references/hsr-main-reference.json). В ней находятся
+[`references/hsr-example.json`](../references/hsr-example.json). В ней находятся
 восемь длин волн, хромофоры и матрица перекрытий. Исследователи меняют её здесь,
 проверяют вместе с алгоритмом и затем передают в `hyperspectrus` командой из
 [`references/README.md`](../references/README.md).
