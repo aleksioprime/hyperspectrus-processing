@@ -7,17 +7,32 @@
 ```bash
 git clone https://github.com/aleksioprime/hyperspectrus-processing
 cd hyperspectrus-processing
+
+# Собрать окружение: поставить зависимости и подключить местные пакеты
+# исходниками. Правки в .py после этого действуют сразу, без переустановки.
 uv sync --all-packages
 ```
+
+Повторять `uv sync --all-packages` нужно только после правки `pyproject.toml`:
+добавили зависимость, тронули точку входа, подняли версию пакета. Правку самого
+расчёта команда не требует.
 
 Расчёт живёт в
 [`packages/hsr-proc-algo/src/hsr_proc_algo/processor.py`](packages/hsr-proc-algo/src/hsr_proc_algo/processor.py). Имя пакета, модуль, точка входа и имя реализации `algo`
 согласованы с рабочим местом - менять их не нужно, всё остальное можно.
 
 ```bash
-uv run python -m hsr_proc                         # пакет виден приложению
-uv run hsr-proc-check hsr-proc-algo               # приёмка: 24 проверки и вердикт
-uv run hsr-proc-run --synthetic --out out         # карты и metrics.json
+# Показать реализации, которые видит рабочее место. Если вашей в списке нет -
+# забыт uv sync после правки pyproject.toml.
+uv run python -m hsr_proc
+
+# Приёмка: 24 проверки и вердикт «принят / не принят».
+# Ту же команду запускает издатель, когда получает алгоритм.
+uv run hsr-proc-check hsr-proc-algo
+
+# Прогон на данных с заранее известным ответом. Раскладывает в каталог out
+# карты концентраций, карту THb, маску очага и metrics.json с показателями.
+uv run hsr-proc-run --synthetic --out out
 ```
 
 Здесь лежит тот самый расчёт, который сегодня работает в рабочем месте врача:
@@ -26,6 +41,21 @@ uv run hsr-proc-run --synthetic --out out         # карты и metrics.json
 это отправная точка исследования: любое изменение сразу видно на фоне рабочего
 поведения. Переписывать всё сразу не нужно - можно заменить сегментацию,
 оставив восстановление концентраций, и наоборот.
+
+## Команды
+
+| Команда | Что делает | Когда запускать |
+|---|---|---|
+| `uv sync --all-packages` | Собирает окружение: зависимости и местные пакеты исходниками | После клонирования и после каждой правки `pyproject.toml` |
+| `uv run python -m hsr_proc` | Показывает реализации, которые видит рабочее место | Если алгоритма «не видно» |
+| `uv run pytest` | Гоняет все тесты репозитория | На каждую правку расчёта |
+| `uv run hsr-proc-check hsr-proc-algo` | Приёмка: 24 проверки и вердикт | Перед передачей и после заметных правок |
+| `uv run hsr-proc-run ... --out out` | Кладёт в каталог карты и `metrics.json` | Когда нужно посмотреть на результат глазами |
+| `uv run python tools/sync_algo.py ../hyperspectrus` | Передаёт расчёт в приложение | После зелёной приёмки |
+| `uv run python tools/sync_contract.py ../hyperspectrus` | Передаёт контракт в приложение | Если менялся состав входа или результата |
+| `uv run python tools/sync_reference.py ../hyperspectrus` | Передаёт справочник коэффициентов | Если менялись коэффициенты перекрытия |
+
+Все команды запускаются из корня репозитория. `uv run` сам поднимает окружение, отдельно активировать `.venv` не нужно.
 
 ## Структура
 
@@ -46,6 +76,8 @@ uv run hsr-proc-run --synthetic --out out         # карты и metrics.json
 чего контракт передаётся в приложение:
 
 ```bash
+# Передать контракт в приложение. Путь - к репозиторию hyperspectrus,
+# он лежит рядом с этим. Копируется каталог packages/hsr-proc-base целиком.
 uv run python tools/sync_contract.py ../hyperspectrus
 ```
 
@@ -155,9 +187,17 @@ algo = "hsr_proc_algo:AlgoProcessor"
 | `budget` | Время обработки кадра прибора |
 
 ```bash
+# Всё подряд: приёмка алгоритма, его собственные тесты и проверки самого набора.
 uv run pytest
-uv run pytest -m contract packages/hsr-proc-algo/tests
+
+# Только обязательный уровень и только для алгоритма - самый быстрый ответ
+# на вопрос «я ничего не сломал?».
+uv run pytest -m contract packages/hsr-proc-algo
+
+# Приёмка целиком с вердиктом в консоль.
 uv run hsr-proc-check hsr-proc-algo
+
+# То же самое, но с отчётом в файл: его прикладывают к передаче алгоритма.
 uv run hsr-proc-check hsr-proc-algo --report приёмка.md
 ```
 
@@ -196,6 +236,8 @@ deviations = [
 Пакет переносится зеркалом, как контракт:
 
 ```bash
+# Передать расчёт в приложение: каталог packages/hsr-proc-algo копируется
+# туда целиком, рядом ложится MIRROR.json с суммами файлов.
 uv run python tools/sync_algo.py ../hyperspectrus
 ```
 
@@ -224,5 +266,6 @@ Git. Снимки пациентов не должны попадать в эт�
 копию в приложение:
 
 ```bash
+# Передать справочник коэффициентов в приложение: точная копия одного файла.
 uv run python tools/sync_reference.py ../hyperspectrus
 ```
