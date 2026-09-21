@@ -52,9 +52,9 @@ uv run hsr-proc-run --synthetic --out out
 | `uv run pytest` | Гоняет все тесты репозитория | На каждую правку расчёта |
 | `uv run hsr-proc-check hsr-proc-algo` | Приёмка: 24 проверки и вердикт | Перед передачей и после заметных правок |
 | `uv run hsr-proc-run ... --out out` | Кладёт в каталог карты и `metrics.json` | Когда нужно посмотреть на результат глазами |
-| `uv run python tools/sync_algo.py ../hyperspectrus` | Передаёт расчёт в приложение | После зелёной приёмки |
-| `uv run python tools/sync_contract.py ../hyperspectrus` | Передаёт контракт в приложение | Если менялся состав входа или результата |
-| `uv run python tools/sync_reference.py ../hyperspectrus` | Передаёт справочник коэффициентов | Если менялись коэффициенты перекрытия |
+| `uv run python tools/sync_algo.py` | Передаёт расчёт в приложение | После зелёной приёмки |
+| `uv run python tools/sync_contract.py` | Передаёт контракт в приложение | Если менялся состав входа или результата |
+| `uv run python tools/sync_reference.py` | Передаёт справочник коэффициентов | Если менялись коэффициенты перекрытия |
 
 Все команды запускаются из корня репозитория. `uv run` сам поднимает окружение, отдельно активировать `.venv` не нужно.
 
@@ -72,14 +72,14 @@ uv run hsr-proc-run --synthetic --out out
 ## Контракт обработки
 
 Главный исходник контракта находится здесь, в `packages/hsr-proc-base`.
-Исследователи могут менять состав входа и результата вместе с алгоритмом и
+Разработчики алгоритма могут менять состав входа и результата вместе с расчётом и
 приёмочными проверками. Такое изменение требует поднять версию пакета, после
 чего контракт передаётся в приложение:
 
 ```bash
 # Передать контракт в приложение. Путь - к репозиторию hyperspectrus,
 # он лежит рядом с этим. Копируется каталог packages/hsr-proc-base целиком.
-uv run python tools/sync_contract.py ../hyperspectrus
+uv run python tools/sync_contract.py
 ```
 
 В `hyperspectrus` находится зеркало с контрольными суммами. Его не редактируют
@@ -239,7 +239,7 @@ deviations = [
 ```bash
 # Передать расчёт в приложение: каталог packages/hsr-proc-algo копируется
 # туда целиком, рядом ложится MIRROR.json с суммами файлов.
-uv run python tools/sync_algo.py ../hyperspectrus
+uv run python tools/sync_algo.py
 ```
 
 Колесом передавать нельзя, хотя `uv build --package hsr-proc-algo` и соберёт
@@ -262,11 +262,11 @@ Git. Снимки пациентов не должны попадать в эт�
 
 Рабочая конфигурация `HSR-EXAMPLE` хранится в
 [`references/hsr-example.json`](references/hsr-example.json). В отличие от
-контракта, здесь главным является этот репозиторий: исследователи подбирают
+контракта, здесь главным является этот репозиторий: разработчики алгоритма подбирают
 коэффициенты, меняют `reference_version`, проверяют алгоритм и передают точную
 копию в приложение:
 
 ```bash
 # Передать справочник коэффициентов в приложение: точная копия одного файла.
-uv run python tools/sync_reference.py ../hyperspectrus
+uv run python tools/sync_reference.py
 ```

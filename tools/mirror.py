@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -24,15 +25,40 @@ from pathlib import Path
 #: Имя файла с описанием зеркала.
 MIRROR_FILE = "MIRROR.json"
 
+#: Переменная окружения с путём к репозиторию приложения.
+TARGET_ENV = "HYPERSPECTRUS_PATH"
+
+#: Где приложение лежит по умолчанию - рядом с этим репозиторием. Путь берётся
+#: от корня репозитория, а не от текущего каталога: команда должна работать
+#: одинаково, откуда бы её ни запустили.
+DEFAULT_TARGET = "../hyperspectrus"
+
 #: Следы работы инструментов, которые в зеркало не попадают.
 EXCLUDED_DIRS = {"__pycache__", ".mypy_cache", ".pytest_cache", ".ruff_cache"}
 
 
 def target_argument(description: str) -> Path:
-    """Разобрать единственный аргумент команд передачи - путь к приложению."""
+    """Определить, куда передавать: аргумент, переменная окружения или сосед.
+
+    Путь набирать каждый раз незачем: в обычной раскладке репозитории лежат
+    рядом. Абсолютный путь в документации хуже - репозиторий открытый, и на
+    чужой машине такого каталога нет.
+    """
     parser = argparse.ArgumentParser(description=description)
-    parser.add_argument("target", type=Path, help="путь к репозиторию hyperspectrus")
-    target: Path = parser.parse_args().target
+    parser.add_argument(
+        "target",
+        nargs="?",
+        type=Path,
+        default=None,
+        help=(
+            "путь к репозиторию hyperspectrus; "
+            f"по умолчанию {TARGET_ENV} или соседний каталог {DEFAULT_TARGET}"
+        ),
+    )
+    target: Path | None = parser.parse_args().target
+    if target is None:
+        chosen = os.environ.get(TARGET_ENV)
+        target = Path(chosen) if chosen else Path(__file__).resolve().parent.parent / DEFAULT_TARGET
     return target.expanduser().resolve()
 
 
@@ -50,7 +76,11 @@ def transfer(package: Path, target_root: Path) -> int:
         print(f"не найден исходный пакет: {source}", file=sys.stderr)
         return 1
     if not (target_root / "pyproject.toml").is_file() or not destination.parent.is_dir():
-        print(f"это не репозиторий hyperspectrus: {target_root}", file=sys.stderr)
+        print(
+            f"это не репозиторий hyperspectrus: {target_root}\n"
+            f"укажите путь аргументом или переменной {TARGET_ENV}",
+            file=sys.stderr,
+        )
         return 1
 
     # Зеркало собирается рядом и подменяет прежнее одним движением: прерванная

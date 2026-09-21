@@ -4,7 +4,7 @@
 и выходных данных меняется вместе с расчётом. После согласованного изменения
 интерфейса его передают в приложение:
 
-    uv run python tools/sync_contract.py ../hyperspectrus
+    uv run python tools/sync_contract.py
 """
 
 from __future__ import annotations

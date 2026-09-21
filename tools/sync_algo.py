@@ -7,7 +7,7 @@ workspace, и ближайший ``uv sync`` вернул бы прежний р
 
 Поэтому пакет переносится зеркалом, как контракт:
 
-    uv run python tools/sync_algo.py ../hyperspectrus
+    uv run python tools/sync_algo.py
 
 Передавать имеет смысл только то, что прошло полную приёмку:
 

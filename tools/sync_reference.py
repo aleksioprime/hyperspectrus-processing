@@ -3,16 +3,20 @@
 Конфигурацию подбирают вместе с алгоритмом, поэтому её исходник хранится в
 этом репозитории. В монорепозиторий приложения попадает точная копия:
 
-    uv run python tools/sync_reference.py ../hyperspectrus
+    uv run python tools/sync_reference.py
+
+Путь к приложению берётся из переменной ``HYPERSPECTRUS_PATH`` или считается
+соседним каталогом ``../hyperspectrus``; аргументом можно передать любой другой.
 """
 
 from __future__ import annotations
 
-import argparse
 import json
 import shutil
 import sys
 from pathlib import Path
+
+from mirror import target_argument
 
 REFERENCE = Path("references/hsr-example.json")
 
@@ -24,13 +28,8 @@ LEGACY_REFERENCES = ("hsr-test-8.json", "hsr-main-reference.json")
 
 def main() -> int:
     """Проверить конфигурацию и скопировать её в репозиторий приложения."""
-    parser = argparse.ArgumentParser(description="Передать основную конфигурацию спектров")
-    parser.add_argument("target", type=Path, help="путь к репозиторию hyperspectrus")
-    args = parser.parse_args()
-
-    root = Path(__file__).resolve().parent.parent
-    source = root / REFERENCE
-    target_root = args.target.expanduser().resolve()
+    target_root = target_argument("Передать основную конфигурацию спектров")
+    source = Path(__file__).resolve().parent.parent / REFERENCE
     destination_directory = target_root / "references"
     if not destination_directory.is_dir():
         print(f"не найден каталог справочников: {destination_directory}", file=sys.stderr)

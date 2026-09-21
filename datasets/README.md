@@ -66,7 +66,7 @@ uv run hsr-proc-run datasets/real/jpeg --reference references/hsr-example.json -
 
 Серия соответствует рабочей тестовой конфигурации
 [`references/hsr-example.json`](../references/hsr-example.json). В ней находятся
-восемь длин волн, хромофоры и матрица перекрытий. Исследователи меняют её здесь,
+восемь длин волн, хромофоры и матрица перекрытий. Разработчики алгоритма меняют её здесь,
 проверяют вместе с алгоритмом и затем передают в `hyperspectrus` командой из
 [`references/README.md`](../references/README.md).
 
