@@ -235,42 +235,24 @@ deviations = [
 ### Второй расчёт рядом
 
 Сравнивать два расчёта удобнее, когда подключены оба: команды умеют выбирать
-между ними по имени. Второй пакет живёт только здесь - в приложение уезжает
-`hsr-proc-algo`, и только он.
+между ними по имени. Пакет создаётся одной командой:
 
 ```bash
-cp -r packages/hsr-proc-algo packages/hsr-proc-newalgo
-mv packages/hsr-proc-newalgo/src/hsr_proc_algo packages/hsr-proc-newalgo/src/hsr_proc_newalgo
+# Копия действующего расчёта - когда меняют его часть и сравнивают с прежним.
+uv run python tools/new_algo.py newalgo
+
+# Пустой расчёт с пометками ЗДЕСЬ - когда пишут с нуля.
+uv run python tools/new_algo.py newalgo --blank
 ```
 
-Дальше правки в копии:
+Команда делает `packages/hsr-proc-newalgo`: переименовывает модуль, класс,
+точку входа и имя реализации, разводит имена файлов тестов (два
+`test_processor.py` в разных пакетах pytest не соберёт) и дописывает две строки
+в корневой `pyproject.toml`. Отдельной папки с образцом в репозитории нет
+намеренно: она отстала бы от контракта молча, а заготовка делается из пакета,
+который сегодня проходит приёмку.
 
-| Файл | Что поменять |
-|---|---|
-| `pyproject.toml` | `name = "hsr-proc-newalgo"`, точка входа `newalgo = "hsr_proc_newalgo:NewAlgoProcessor"`, `packages = ["src/hsr_proc_newalgo"]` |
-| `src/hsr_proc_newalgo/processor.py` | имя класса и `name = "newalgo"` |
-| `src/hsr_proc_newalgo/__init__.py` | импорт и `__all__` |
-| `tests/` | оставить только приёмку и переименовать файл, например в `test_newalgo.py` |
-
-Имена файлов тестов уникальны на весь репозиторий: pytest импортирует их как
-модули верхнего уровня, и два `test_processor.py` в разных пакетах столкнутся
-при сборе. Скопированные тесты проверяют прежний расчёт, поэтому проще их
-удалить и написать свои.
-
-В корневой `pyproject.toml` добавляются две строки - в группу `dev` и в
-`[tool.uv.sources]`:
-
-```toml
-[dependency-groups]
-dev = [
-    "hsr-proc-newalgo",
-]
-
-[tool.uv.sources]
-hsr-proc-newalgo = { workspace = true }
-```
-
-После `uv sync` подключены оба:
+После `uv sync` подключены оба расчёта:
 
 ```bash
 uv run python -m hsr_proc                       # оба в списке, выбор не сделан
@@ -278,8 +260,13 @@ uv run hsr-proc-check hsr-proc-newalgo          # приёмка второго
 uv run hsr-proc-run --synthetic --processor newalgo --out out/new
 ```
 
-Когда новый расчёт победил, его содержимое переносится в `hsr-proc-algo`: имя
-`algo` записано в настройках рабочего места, и менять его в одиночку нельзя.
+Пока расчёт не написан, числовые проверки на нём падают - это нормально, и
+`uv run pytest packages/hsr-proc-newalgo -m contract` проверяет только то, что
+уже должно работать.
+
+Второй пакет живёт только здесь. В приложение уезжает `hsr-proc-algo`, и когда
+новый расчёт побеждает, его содержимое переносится туда: имя `algo` записано в
+настройках рабочего места, и менять его в одиночку нельзя.
 
 ### Передача в приложение
 
