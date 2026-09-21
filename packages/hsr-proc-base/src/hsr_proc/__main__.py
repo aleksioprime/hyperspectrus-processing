@@ -11,6 +11,8 @@ from __future__ import annotations
 import sys
 from typing import IO, Any
 
+from .contract import Processor
+from .errors import ProcessorNotFound
 from .registry import PROCESSOR_ENV, available, get_processor
 
 
@@ -44,16 +46,30 @@ def main() -> int:
     use_utf8()
 
     processors = available()
-    active = get_processor()
+    if not processors:
+        print("Реализации обработки не подключены: установите пакет с алгоритмом")
+        return 1
+
+    # Несколько реализаций без выбранной - обычное состояние, когда расчёты
+    # сравнивают между собой. Команда обязана показать список именно в этом
+    # случае: без него не видно даже, из чего выбирать.
+    active: Processor | None
+    try:
+        active = get_processor()
+    except ProcessorNotFound:
+        active = None
 
     print("Доступные реализации обработки:")
     for name in sorted(processors):
         processor = processors[name]
-        mark = "→" if name == active.name else " "
+        mark = "→" if active is not None and name == active.name else " "
         print(f" {mark} {name} {processor.version}")
 
     print()
-    print(f"Выбрана: {active.name} {active.version}")
+    if active is None:
+        print("Выбор не сделан: подключено несколько реализаций")
+    else:
+        print(f"Выбрана: {active.name} {active.version}")
     print(f"Сменить: переменная окружения {PROCESSOR_ENV}")
     return 0
 
