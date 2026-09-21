@@ -2,7 +2,7 @@
 #
 # Здесь проверяется не чужой алгоритм, а то, чем его будут проверять: набор
 # приёмки прогоняется на заведомо правильной реализации и на подопытных с
-# внесёнными нарушениями, а заготовка пакета - на уровне `contract`.
+# внесёнными нарушениями, а редактируемый пакет - на уровне `contract`.
 
 name: Проверка
 
@@ -42,10 +42,10 @@ jobs:
       # правилами 3.11. Проверять один и тот же код трижды всё равно незачем.
       - name: Проверка типов
         if: matrix.python == '3.11'
-        run: uv run mypy packages/hsr-proc-conformance/src template/hsr-proc-myalgo/src tools
+        run: uv run mypy conformance/src packages/hsr-proc-algo/src tools
 
       - name: Тесты набора приёмки
         run: uv run pytest
 
-      - name: Заготовка пакета проходит обязательный уровень
-        run: uv run hsr-proc-check hsr-proc-myalgo --level contract
+      - name: Пакет алгоритма проходит обязательный уровень
+        run: uv run hsr-proc-check hsr-proc-algo --level contract

@@ -4,7 +4,7 @@
 описано единственное, что связывает его с рабочим местом: принять
 :class:`ProcessingRequest` и вернуть :class:`ProcessingResult`.
 
-Как оформить и подключить свой пакет - см. ``CONTRACT.md``.
+Как оформить и подключить свой пакет - см. ``README.md``.
 """
 
 from __future__ import annotations

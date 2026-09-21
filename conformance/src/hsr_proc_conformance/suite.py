@@ -4,12 +4,12 @@
 объявляет свой класс, и все проверки достаются ему готовыми.
 
     from hsr_proc_conformance import ProcessorConformance
-    from hsr_proc_myalgo import MyProcessor
+    from hsr_proc_algo import AlgoProcessor
 
 
     class TestМойАлгоритм(ProcessorConformance):
-        processor = MyProcessor()
-        distribution = "hsr-proc-myalgo"
+        processor = AlgoProcessor()
+        distribution = "hsr-proc-algo"
 
 Проверки разделены метками на три уровня:
 

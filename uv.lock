@@ -9,9 +9,9 @@ resolution-markers = [
 
 [manifest]
 members = [
+    "hsr-proc-algo",
     "hsr-proc-base",
     "hsr-proc-conformance",
-    "hsr-proc-myalgo",
     "hyperspectrus-processing",
 ]
 
@@ -89,45 +89,9 @@ wheels = [
 ]
 
 [[package]]
-name = "hsr-proc-base"
+name = "hsr-proc-algo"
 version = "0.1.0"
-source = { editable = "packages/hsr-proc-base" }
-dependencies = [
-    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
-    { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
-    { name = "pillow" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "numpy", specifier = ">=2.1" },
-    { name = "pillow", specifier = ">=11.0" },
-]
-
-[[package]]
-name = "hsr-proc-conformance"
-version = "0.1.0"
-source = { editable = "packages/hsr-proc-conformance" }
-dependencies = [
-    { name = "hsr-proc-base" },
-    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
-    { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
-    { name = "pillow" },
-    { name = "pytest" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "hsr-proc-base", editable = "packages/hsr-proc-base" },
-    { name = "numpy", specifier = ">=2.1" },
-    { name = "pillow", specifier = ">=11.0" },
-    { name = "pytest", specifier = ">=8.3" },
-]
-
-[[package]]
-name = "hsr-proc-myalgo"
-version = "0.1.0"
-source = { editable = "template/hsr-proc-myalgo" }
+source = { editable = "packages/hsr-proc-algo" }
 dependencies = [
     { name = "hsr-proc-base" },
     { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
@@ -148,7 +112,43 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "hsr-proc-conformance", editable = "packages/hsr-proc-conformance" },
+    { name = "hsr-proc-conformance", editable = "conformance" },
+    { name = "pytest", specifier = ">=8.3" },
+]
+
+[[package]]
+name = "hsr-proc-base"
+version = "0.1.0"
+source = { editable = "packages/hsr-proc-base" }
+dependencies = [
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+    { name = "pillow" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "numpy", specifier = ">=2.1" },
+    { name = "pillow", specifier = ">=11.0" },
+]
+
+[[package]]
+name = "hsr-proc-conformance"
+version = "0.1.0"
+source = { editable = "conformance" }
+dependencies = [
+    { name = "hsr-proc-base" },
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+    { name = "pillow" },
+    { name = "pytest" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "hsr-proc-base", editable = "packages/hsr-proc-base" },
+    { name = "numpy", specifier = ">=2.1" },
+    { name = "pillow", specifier = ">=11.0" },
     { name = "pytest", specifier = ">=8.3" },
 ]
 

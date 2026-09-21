@@ -6,7 +6,7 @@
 рабочего места.
 
     uv run hsr-proc-check
-    uv run hsr-proc-check hsr-proc-myalgo --level contract
+    uv run hsr-proc-check hsr-proc-algo --level contract
     uv run hsr-proc-check --report приёмка.md
 """
 

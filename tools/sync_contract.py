@@ -35,14 +35,16 @@ EXCLUDED_DIRS = {"__pycache__", ".mypy_cache", ".pytest_cache", ".ruff_cache"}
 
 #: Ссылки на документацию монорепозитория, которых здесь нет.
 LINK_REWRITES = (
-    ("[docs/processing.md](../../docs/processing.md)", "[CONTRACT.md](../../CONTRACT.md)"),
-    ("``docs/processing.md``", "``CONTRACT.md``"),
-    ("`docs/processing.md`", "`CONTRACT.md`"),
+    (
+        "[docs/processing.md](../../docs/processing.md)",
+        "[README.md](../../README.md#контракт-обработки)",
+    ),
+    ("``docs/processing.md``", "``README.md``"),
+    ("`docs/processing.md`", "`README.md`"),
     (
         "Расчёт живёт в `packages/hsr-proc-algo` и подключается по тем же правилам, "
-        "что и любая другая реализация. Сейчас там эталонная.",
-        "Пакет с расчётом подключается точкой входа - как оформить свой, "
-        "описано в [CONTRACT.md](../../CONTRACT.md).",
+        "что и любая другая реализация. Сейчас там эталонная.\n\n",
+        "",
     ),
 )
 

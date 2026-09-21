@@ -8,12 +8,12 @@
 Подключение к своему пакету - наследованием:
 
     from hsr_proc_conformance import ProcessorConformance
-    from hsr_proc_myalgo import MyProcessor
+    from hsr_proc_algo import AlgoProcessor
 
 
     class TestМойАлгоритм(ProcessorConformance):
-        processor = MyProcessor()
-        distribution = "hsr-proc-myalgo"
+        processor = AlgoProcessor()
+        distribution = "hsr-proc-algo"
 
 Проверка установленного пакета целиком - командой ``hsr-proc-check``.
 Прогон на настоящих кадрах - командой ``hsr-proc-run``.
