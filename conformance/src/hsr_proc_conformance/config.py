@@ -6,28 +6,45 @@
 обученный на снимках, эту модель не воспроизводит точно и провалил бы точную
 сверку концентраций, будучи при этом лучше эталонного.
 
-Поэтому послабления разрешены, но только объявленные вслух: они пишутся в
-``pyproject.toml`` пакета вместе с причиной и попадают отдельным разделом в
-отчёт приёмки. Тихо ослабить допуск нельзя - проверка
-``test_послабления_объяснены`` этого не даст.
+Поэтому послабления разрешены, но только объявленные вслух: они пишутся рядом
+с кодом алгоритма вместе с причиной и попадают отдельным разделом в отчёт
+приёмки. Тихо ослабить допуск нельзя - проверка ``test_послабления_объяснены``
+этого не даст.
 
-    [tool.hsr_proc_conformance]
+Настройки лежат в самом пакете, файлом ``conformance.toml`` рядом с модулем
+реализации:
+
+    src/hsr_proc_myalgo/conformance.toml
+
     profile = "custom"
     concentration_atol = 1e-3
     deviations = [
         "Модель учитывает рассеяние, точное обращение линейной системы не воспроизводится",
     ]
+
+Место выбрано так, чтобы настройки ехали вместе с алгоритмом. ``pyproject.toml``
+в колесо не попадает, и приёмка у издателя читала бы файл его собственного
+репозитория: объявленные отступления исчезли бы вместе с причинами, а допуски
+молча стали бы эталонными.
 """
 
 from __future__ import annotations
 
 import os
+import re
 import tomllib
 from dataclasses import dataclass, field, fields
+from importlib import metadata, resources
 from pathlib import Path
 from typing import Any
 
-#: Раздел настроек в ``pyproject.toml`` пакета с алгоритмом.
+from hsr_proc.registry import ENTRY_POINT_GROUP
+
+#: Файл настроек внутри пакета с алгоритмом.
+FILE_NAME = "conformance.toml"
+
+#: Раздел настроек в ``pyproject.toml``. В ``conformance.toml`` ключи лежат и
+#: без него: файл целиком принадлежит приёмке, оборачивать их незачем.
 SECTION = ("tool", "hsr_proc_conformance")
 
 #: Переменная окружения с явным путём к файлу настроек.
@@ -87,29 +104,82 @@ class Settings:
         )
 
 
-def load(start: Path | None = None) -> Settings:
-    """Прочитать настройки из ``pyproject.toml`` пакета с алгоритмом.
+def load(start: Path | None = None, *, distribution: str | None = None) -> Settings:
+    """Прочитать настройки приёмки.
 
-    Файл ищется вверх от указанного каталога - так проверки берут настройки
-    пакета, который проверяют, независимо от того, откуда запущен pytest.
-    Настроек может не быть вовсе: тогда действуют эталонные допуски.
+    Источники в порядке убывания доверия:
+
+    1. файл, названный переменной ``HSR_PROC_CONFORMANCE_CONFIG``;
+    2. ``conformance.toml`` внутри проверяемого пакета - он один едет вместе с
+       алгоритмом и читается что у разработчика, что у издателя;
+    3. ``pyproject.toml`` вверх от текущего каталога - на время разработки,
+       пока пакет ещё не установлен.
+
+    Имя пакета известно не всегда: набор проверок запускают и на реализации,
+    переданной прямо в коде. Тогда второй источник пропускается - иначе
+    настройки чужого установленного пакета молча подменили бы эталонные.
     """
-    path = _locate(start)
-    if path is None:
-        return Settings()
+    override = os.environ.get(CONFIG_ENV)
+    if override:
+        path = Path(override).expanduser()
+        if not path.is_file():
+            raise FileNotFoundError(f"файл настроек приёмки не найден: {path}")
+        return _read(path, wrapped=False)
 
+    packaged = _packaged(distribution)
+    if packaged is not None:
+        return _read(packaged, wrapped=False)
+
+    pyproject = _locate(start)
+    if pyproject is None:
+        return Settings()
+    return _read(pyproject, wrapped=True)
+
+
+def _read(path: Path, *, wrapped: bool) -> Settings:
+    """Прочитать файл настроек.
+
+    В ``pyproject.toml`` ключи лежат в разделе ``[tool.hsr_proc_conformance]``;
+    в ``conformance.toml`` допустимы оба написания - и раздел, и просто ключи.
+    """
     with path.open("rb") as stream:
         document = tomllib.load(stream)
 
     section: Any = document
     for key in SECTION:
-        if not isinstance(section, dict) or key not in section:
+        if isinstance(section, dict) and key in section:
+            section = section[key]
+        elif wrapped:
             return Settings(source=path)
-        section = section[key]
+
     if not isinstance(section, dict):
         return Settings(source=path)
-
     return _build(section, path)
+
+
+def _packaged(distribution: str | None) -> Path | None:
+    """Найти ``conformance.toml`` внутри установленного пакета с алгоритмом."""
+    if not distribution:
+        return None
+
+    wanted = _normalize(distribution)
+    for entry in metadata.entry_points(group=ENTRY_POINT_GROUP):
+        owner = getattr(entry, "dist", None)
+        if owner is None or _normalize(owner.name) != wanted:
+            continue
+        try:
+            root = resources.files(entry.module.split(".")[0])
+        except (ImportError, TypeError):
+            continue
+        candidate = Path(str(root)) / FILE_NAME
+        if candidate.is_file():
+            return candidate
+    return None
+
+
+def _normalize(name: str) -> str:
+    """Привести имя пакета к виду, в котором его сравнивают."""
+    return re.sub(r"[-_.]+", "-", name).lower()
 
 
 def _build(section: dict[str, Any], path: Path) -> Settings:
@@ -148,14 +218,7 @@ def _profile(value: str, path: Path) -> str:
 
 
 def _locate(start: Path | None) -> Path | None:
-    """Найти файл настроек: по переменной окружения или вверх по дереву."""
-    override = os.environ.get(CONFIG_ENV)
-    if override:
-        path = Path(override).expanduser()
-        if not path.is_file():
-            raise FileNotFoundError(f"файл настроек приёмки не найден: {path}")
-        return path
-
+    """Найти ближайший ``pyproject.toml`` вверх по дереву каталогов."""
     current = (start or Path.cwd()).resolve()
     for directory in (current, *current.parents):
         candidate = directory / "pyproject.toml"

@@ -39,18 +39,10 @@ hsr-proc-conformance = { workspace = true }
 # сразу видна проверкам и командам разработки.
 hsr-proc-algo = { workspace = true }
 
-# Допуски приёмки редактируемого алгоритма. Для алгоритма на другой модели
-# профиль и объяснения отступлений меняются здесь; формат описан в README.md.
-[tool.hsr_proc_conformance]
-profile = "reference"
-
 # ── Линтер и форматтер ───────────────────────────────────────────────────────
 [tool.ruff]
 line-length = 100
 target-version = "py311"
-# Зеркало контракта приводится в порядок в монорепозитории: форматирование его
-# здесь разошлось бы с источником и уронило бы сверку зеркала.
-extend-exclude = ["packages/hsr-proc-base"]
 
 [tool.ruff.lint]
 select = ["E", "W", "F", "I", "B", "UP", "RUF", "D"]
@@ -82,4 +74,4 @@ testpaths = ["packages/hsr-proc-base", "tests"]
 python_version = "3.11"
 strict = true
 ignore_missing_imports = true
-exclude = ["/tests/", "packages/hsr-proc-base"]
+exclude = ["/tests/"]

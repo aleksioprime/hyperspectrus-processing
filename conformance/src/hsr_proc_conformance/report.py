@@ -68,6 +68,7 @@ class Report:
             "",
             f"Реализация: **{self.processor or 'не определена'}**  ",
             f"Дата: {date.today():%Y-%m-%d}  ",
+            f"Настройки приёмки: {self.settings.source or 'по умолчанию'}  ",
             f"Вердикт: **{self.verdict()}**",
             "",
             "## Оформление пакета",

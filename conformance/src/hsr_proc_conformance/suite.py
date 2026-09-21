@@ -79,8 +79,12 @@ class ProcessorConformance:
 
     @pytest.fixture
     def settings(self) -> Settings:
-        """Допуски приёмки из ``pyproject.toml`` проверяемого пакета."""
-        return load()
+        """Допуски приёмки проверяемого пакета.
+
+        Имя пакета передаётся дальше: настройки едут внутри него, и брать их
+        нужно оттуда, а не из репозитория, в котором запущены проверки.
+        """
+        return load(distribution=self.distribution or os.environ.get(DISTRIBUTION_ENV))
 
     @pytest.fixture
     def case(self) -> data.Case:

@@ -68,7 +68,7 @@ def main(argv: list[str] | None = None) -> int:
         processor=names[0] if len(names) == 1 else ", ".join(names),
         findings=findings,
         outcomes=outcomes,
-        settings=config.load(),
+        settings=config.load(distribution=packages[0] if len(packages) == 1 else None),
         level=args.level,
     )
 

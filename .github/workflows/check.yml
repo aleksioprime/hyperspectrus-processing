@@ -42,7 +42,7 @@ jobs:
       # правилами 3.11. Проверять один и тот же код трижды всё равно незачем.
       - name: Проверка типов
         if: matrix.python == '3.11'
-        run: uv run mypy conformance/src packages/hsr-proc-algo/src tools
+        run: uv run mypy packages/hsr-proc-base/src packages/hsr-proc-algo/src conformance/src tools
 
       - name: Тесты набора приёмки
         run: uv run pytest
