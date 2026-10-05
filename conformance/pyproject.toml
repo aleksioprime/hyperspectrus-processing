@@ -15,6 +15,8 @@ dependencies = [
 hsr-proc-check = "hsr_proc_conformance.cli:main"
 # Прогон алгоритма на кадрах без рабочего места: карты и показатели в каталог.
 hsr-proc-run = "hsr_proc_conformance.runner:main"
+# Лента карт оксигенации и THb по сериям пробы - для показа и как образец отображения.
+hsr-proc-demo = "hsr_proc_conformance.demo:main"
 
 # Метки уровней проверок регистрируются плагином, поэтому в чужом репозитории
 # ничего настраивать не нужно: `pytest -m contract` работает сразу.
