@@ -26,6 +26,7 @@ dev = [
     # С разбором RAW: прогон и проверки работают и на кадрах DNG.
     "hsr-proc-base[raw]",
     "hsr-proc-algo",
+    "hsr-proc-oxy",
     "hsr-proc-conformance",
     "pytest>=8.3",
     "ruff>=0.9",
@@ -47,6 +48,7 @@ hsr-proc-conformance = { workspace = true }
 # Редактируемый алгоритм подключается как член workspace: его точка входа
 # сразу видна проверкам и командам разработки.
 hsr-proc-algo = { workspace = true }
+hsr-proc-oxy = { workspace = true }
 
 # ── Линтер и форматтер ───────────────────────────────────────────────────────
 [tool.ruff]
