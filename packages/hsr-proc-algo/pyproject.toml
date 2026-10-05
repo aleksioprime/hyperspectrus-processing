@@ -6,7 +6,7 @@ version = "1.0.0"
 description = "Алгоритм восстановления концентраций хромофоров для HyperSpectRus"
 requires-python = ">=3.11"
 dependencies = [
-    "hsr-proc-base>=0.1,<0.2",
+    "hsr-proc-base>=0.1,<0.3",
     "numpy>=2.1",
 ]
 

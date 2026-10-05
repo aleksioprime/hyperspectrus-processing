@@ -7,8 +7,13 @@ import pytest
 from hsr_proc.errors import InvalidInput
 from hsr_proc.models import (
     Chromophore,
+    DisplayScale,
     OverlapMatrix,
+    ProcessingMetrics,
     ProcessingParams,
+    ProcessingResult,
+    RegionMeans,
+    SegmentationInfo,
     SpectralCube,
 )
 
@@ -88,3 +93,48 @@ def test_дополнительные_параметры_доступны_по_�
 
     assert params.option("метод") == "unmixing"
     assert params.option("порог", 0.5) == 0.5
+
+
+def test_куб_по_умолчанию_нелинеен() -> None:
+    """Прежние вызовы без флага означают JPG - так кадры и приходили до RAW."""
+    cube = SpectralCube(wavelengths_nm=(450,), data=np.zeros((1, 2, 2), dtype=np.float32))
+
+    assert cube.linear is False
+
+
+@pytest.mark.parametrize(("low", "high"), [(100.0, 80.0), (90.0, 90.0), (float("nan"), 1.0)])
+def test_шкала_показа_отклоняет_неверные_пределы(low: float, high: float) -> None:
+    """Перевёрнутая или пустая шкала окрасила бы карту одним цветом."""
+    with pytest.raises(InvalidInput):
+        DisplayScale(low, high)
+
+
+@pytest.mark.parametrize(
+    ("box", "thb", "oxygenation"),
+    [
+        ((5, 0, 5, 10), 1.0, None),
+        ((0, 8, 4, 2), 1.0, None),
+        ((0, 0, 4, 4), float("nan"), None),
+        ((0, 0, 4, 4), 1.0, float("inf")),
+    ],
+)
+def test_средние_по_области_проверяются(
+    box: tuple[int, int, int, int], thb: float, oxygenation: float | None
+) -> None:
+    """Пустая область или не-число в средних не должны дойти до карточки сеанса."""
+    with pytest.raises(InvalidInput):
+        RegionMeans(box=box, thb=thb, oxygenation=oxygenation)
+
+
+def test_карта_оксигенации_без_шкалы_отклоняется() -> None:
+    """Без шкалы неясно, что значат числа на карте."""
+    shape = (2, 2)
+    with pytest.raises(InvalidInput, match="шкалы"):
+        ProcessingResult(
+            concentrations={"HbO2": np.zeros(shape, dtype=np.float32)},
+            thb_map=np.zeros(shape, dtype=np.float32),
+            lesion_mask=np.zeros(shape, dtype=bool),
+            metrics=ProcessingMetrics(s_coefficient=0.0, mean_lesion_thb=0.0, mean_skin_thb=0.0),
+            segmentation=SegmentationInfo(method="otsu", threshold=0.0, gaussian_sigma=1.0),
+            oxygenation=np.zeros(shape, dtype=np.float32),
+        )

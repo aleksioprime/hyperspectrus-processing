@@ -1,6 +1,6 @@
 [project]
 name = "hsr-proc-base"
-version = "0.1.0"
+version = "0.2.0"
 description = "Контракт обработки мультиспектральных серий и реестр реализаций"
 requires-python = ">=3.11"
 # Пакет намеренно обходится numpy и pillow: он описывает контракт обработки,
@@ -9,6 +9,12 @@ requires-python = ">=3.11"
 dependencies = [
     "numpy>=2.1",
     "pillow>=11.0",
+]
+
+[project.optional-dependencies]
+# Кадры RAW (DNG) нужны не всем: тот, кто считает по JPG, rawpy не ставит.
+raw = [
+    "rawpy>=0.19",
 ]
 
 [build-system]
