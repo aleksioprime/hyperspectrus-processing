@@ -23,7 +23,8 @@ dependencies = []
 # ним. Дальше `pytest` падает с «No module named numpy» - сообщением, по
 # которому причину не найти.
 dev = [
-    "hsr-proc-base",
+    # С разбором RAW: прогон и проверки работают и на кадрах DNG.
+    "hsr-proc-base[raw]",
     "hsr-proc-algo",
     "hsr-proc-conformance",
     "pytest>=8.3",

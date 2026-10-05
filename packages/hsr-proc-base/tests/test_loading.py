@@ -7,7 +7,13 @@ from pathlib import Path
 import numpy as np
 import pytest
 from hsr_proc.errors import InvalidInput
-from hsr_proc.loading import discover_frames, load_cube, load_session_set
+from hsr_proc.loading import (
+    discover_frames,
+    discover_raw_frames,
+    load_cube,
+    load_raw_cube,
+    load_session_set,
+)
 from PIL import Image
 
 
@@ -81,3 +87,60 @@ def test_набор_серии_читается_по_раскладке_устр
     cube = load_session_set(tmp_path, set_number=2)
 
     assert cube.wavelengths_nm == (450, 517)
+
+
+class _FakeRaw:
+    """Кадр DNG без файла: мозаика 4x4, чёрный 64 у всех сайтов, кроме одного."""
+
+    def __init__(self, level: float) -> None:
+        self.raw_image_visible = np.full((4, 4), level, dtype=np.uint16)
+        self.raw_colors_visible = np.tile(np.array([[0, 1], [3, 2]]), (2, 2))
+        self.black_level_per_channel = [64, 64, 64, 64]
+        self.white_level = 1023
+
+    def __enter__(self) -> _FakeRaw:
+        return self
+
+    def __exit__(self, *exc: object) -> None:
+        return None
+
+
+def test_raw_даёт_линейный_куб_вдвое_меньше(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Чёрный вычтен, отсчёты поделены на размах, квадрат 2x2 сведён в пиксель."""
+    import sys
+    import types
+
+    levels = {"450nm.dng": 64 + 959 * 0.25, "939nm.dng": 64 + 959 * 0.5}
+    for name in levels:
+        (tmp_path / name).write_bytes(b"dng")
+    (tmp_path / "450nm.jpg").write_bytes(b"jpg")
+    fake = types.SimpleNamespace(
+        imread=lambda path: _FakeRaw(levels[Path(path).name]), LibRawError=RuntimeError
+    )
+    monkeypatch.setitem(sys.modules, "rawpy", fake)
+
+    cube = load_session_set_raw(tmp_path)
+
+    assert cube.linear is True
+    assert cube.wavelengths_nm == (450, 939)
+    assert cube.data.shape == (2, 2, 2)
+    assert np.allclose(cube.data[0], 0.25, atol=1e-3)
+    assert np.allclose(cube.data[1], 0.5, atol=1e-3)
+
+
+def test_raw_без_rawpy_объясняет_причину(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Без rawpy пользователь должен узнать, что поставить, а не увидеть ImportError."""
+    import sys
+
+    (tmp_path / "450nm.dng").write_bytes(b"dng")
+    monkeypatch.setitem(sys.modules, "rawpy", None)
+
+    with pytest.raises(InvalidInput, match="raw"):
+        load_session_set_raw(tmp_path)
+
+
+def load_session_set_raw(directory: Path):  # type: ignore[no-untyped-def]
+    """Собрать линейный куб из каталога с кадрами DNG."""
+    return load_raw_cube(discover_raw_frames(directory))

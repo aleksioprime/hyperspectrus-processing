@@ -20,16 +20,24 @@ from .errors import (
     ProcessingFailed,
     ProcessorNotFound,
 )
-from .loading import discover_frames, load_cube, load_session_set
+from .loading import (
+    discover_frames,
+    discover_raw_frames,
+    load_cube,
+    load_raw_cube,
+    load_session_set,
+)
 from .models import (
     BoolMask,
     Chromophore,
+    DisplayScale,
     FloatMap,
     OverlapMatrix,
     ProcessingMetrics,
     ProcessingParams,
     ProcessingRequest,
     ProcessingResult,
+    RegionMeans,
     SegmentationInfo,
     SpectralCube,
 )
@@ -43,13 +51,14 @@ from .registry import (
     unregister,
 )
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = [
     "ENTRY_POINT_GROUP",
     "PROCESSOR_ENV",
     "BoolMask",
     "Chromophore",
+    "DisplayScale",
     "FloatMap",
     "InvalidInput",
     "OverlapMatrix",
@@ -62,13 +71,16 @@ __all__ = [
     "Processor",
     "ProcessorNotFound",
     "ProgressCallback",
+    "RegionMeans",
     "SegmentationInfo",
     "SpectralCube",
     "available",
     "describe",
     "discover_frames",
+    "discover_raw_frames",
     "get_processor",
     "load_cube",
+    "load_raw_cube",
     "load_session_set",
     "refresh",
     "register",

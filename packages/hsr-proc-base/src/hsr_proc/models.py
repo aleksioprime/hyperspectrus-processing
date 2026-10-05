@@ -47,6 +47,17 @@ class SpectralCube:
     wavelengths_nm: tuple[int, ...]
     data: FloatMap
 
+    linear: bool = False
+    """Значения пропорциональны свету, отражённому кожей.
+
+    ``True`` - кадры RAW (DNG): чёрный уровень вычтен, отсчёты поделены на
+    размах от чёрного до белого уровня сенсора, байеровский квадрат 2x2
+    усреднён в один пиксель (см. ``loading.load_raw_cube``). ``False`` - кадры
+    прошли обработку камеры (JPG): тоновую кривую и коррекцию виньетирования,
+    и по ним свет восстанавливается только приближённо. Расчёт, которому нужна
+    физика поглощения, обязан различать эти два случая.
+    """
+
     def __post_init__(self) -> None:
         """Проверить согласованность формы куба и списка длин волн."""
         if self.data.ndim != 3:
@@ -159,6 +170,56 @@ class ProcessingRequest:
 
 
 @dataclass(frozen=True)
+class DisplayScale:
+    """Как показывать карту: пределы цветовой шкалы и подпись к ней.
+
+    Задаёт алгоритм, потому что только он знает, в каких единицах посчитана
+    карта и какой размах у неё осмыслен. Значения карты вне пределов рабочее
+    место показывает крайними цветами шкалы.
+    """
+
+    low: float
+    high: float
+    label: str = ""
+    """Подпись шкалы для врача, например «индекс оксигенации, усл. ед.»."""
+
+    def __post_init__(self) -> None:
+        """Проверить, что пределы - числа и идут по возрастанию."""
+        if not (np.isfinite(self.low) and np.isfinite(self.high)):
+            raise InvalidInput(f"пределы шкалы не числа: {self.low}, {self.high}")
+        if self.low >= self.high:
+            raise InvalidInput(f"нижний предел шкалы {self.low} не меньше верхнего {self.high}")
+
+
+@dataclass(frozen=True)
+class RegionMeans:
+    """Средние значения карт по прямоугольной области кадра.
+
+    Область задаёт алгоритм и возвращает её вместе со средними, чтобы рабочее
+    место могло показать врачу, откуда взяты числа.
+    """
+
+    box: tuple[int, int, int, int]
+    """Границы области в пикселях кадра: (верх, лево, низ, право), низ и право
+    не включаются - как в срезе ``карта[верх:низ, лево:право]``."""
+
+    thb: float
+    """Средний THb по области, в единицах карты ``thb_map``."""
+
+    oxygenation: float | None = None
+    """Средний индекс оксигенации по области, если алгоритм его считает."""
+
+    def __post_init__(self) -> None:
+        """Проверить, что область не пуста и средние - числа."""
+        top, left, bottom, right = self.box
+        if not (0 <= top < bottom and 0 <= left < right):
+            raise InvalidInput(f"область {self.box} пуста или задана в обратном порядке")
+        values = [self.thb] if self.oxygenation is None else [self.thb, self.oxygenation]
+        if not np.isfinite(values).all():
+            raise InvalidInput(f"средние по области не числа: {values}")
+
+
+@dataclass(frozen=True)
 class ProcessingMetrics:
     """Числовые показатели, которые видит врач."""
 
@@ -167,6 +228,13 @@ class ProcessingMetrics:
 
     mean_lesion_thb: float
     mean_skin_thb: float
+
+    centre: RegionMeans | None = None
+    """Средние по области в центре кадра, если алгоритм их считает.
+
+    Центр кадра освещён ровнее всего и обычно наведён на исследуемый участок:
+    при пробе с окклюзией именно его значения сравнивают между снимками.
+    """
 
 
 @dataclass(frozen=True)
@@ -198,6 +266,24 @@ class ProcessingResult:
     """Имя и версия реализации, выполнившей обработку."""
 
     notes: str = ""
+
+    oxygenation: FloatMap | None = None
+    """Карта оксигенации ткани размером с кадр, если алгоритм её считает.
+
+    Единицы и пределы показа задаёт ``oxygenation_scale``; без шкалы карта
+    не передаётся.
+    """
+
+    oxygenation_scale: DisplayScale | None = None
+    """Шкала показа карты оксигенации."""
+
+    thb_scale: DisplayScale | None = None
+    """Шкала показа карты THb, если алгоритм знает её единицы и размах."""
+
+    def __post_init__(self) -> None:
+        """Карта оксигенации без шкалы показа бесполезна: неясно, что значат числа."""
+        if self.oxygenation is not None and self.oxygenation_scale is None:
+            raise InvalidInput("карта оксигенации передана без шкалы показа oxygenation_scale")
 
     def concentration(self, symbol: str) -> FloatMap:
         """Вернуть карту концентраций хромофора по его обозначению."""
