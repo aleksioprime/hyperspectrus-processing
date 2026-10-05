@@ -6,10 +6,12 @@
 
     uv run hsr-proc-run --synthetic --out out
     uv run hsr-proc-run ../datasets/real/jpeg --reference ../references/hsr-example.json
+    uv run hsr-proc-run ../datasets/real/сеанс --format raw --out out/raw
 
-Кадры раскладываются так же, как их пишет прибор: ``<каталог>/jpeg/1/450nm.jpg``
-или просто ``<каталог>/450nm.jpg``. Файлы DNG не читаются - для них алгоритму
-нужны собственные зависимости.
+Кадры раскладываются так же, как их пишет прибор: ``<каталог>/raw/1/450nm.dng``
+и ``<каталог>/jpeg/1/450nm.jpg`` или просто ``<каталог>/450nm.jpg``. По
+умолчанию берутся кадры RAW, если они есть: по ним свет восстанавливается
+точно. Для DNG нужен ``hsr-proc-base[raw]``.
 
 Справочник коэффициентов берётся из ``references`` рядом с репозиторием, если
 не указан ``--reference``: это тот же файл, который уходит в приложение, и
@@ -25,10 +27,12 @@ import time
 from pathlib import Path
 
 import numpy as np
+from hsr_proc.display import colorize, draw_region
 from hsr_proc.errors import ProcessingError
-from hsr_proc.loading import discover_frames, load_cube
+from hsr_proc.loading import discover_frames, discover_raw_frames, load_cube, load_raw_cube
 from hsr_proc.models import (
     Chromophore,
+    DisplayScale,
     OverlapMatrix,
     ProcessingParams,
     ProcessingRequest,
@@ -61,6 +65,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--out", type=Path, default=Path("out"), help="куда сложить результат")
     parser.add_argument("--sigma", type=float, default=1.0, help="сглаживание перед выделением")
     parser.add_argument("--processor", help="имя реализации, если подключено несколько")
+    parser.add_argument(
+        "--format",
+        choices=["auto", "raw", "jpeg"],
+        default="auto",
+        help="какие кадры брать: RAW (DNG), JPG или RAW, если они есть (по умолчанию)",
+    )
     args = parser.parse_args(argv)
 
     if not args.synthetic and args.series is None:
@@ -75,7 +85,8 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     print(f"Реализация: {processor.name} {processor.version}")
-    print(f"Серия: {cube.count} спектров, кадр {cube.width}×{cube.height}")
+    kind = "RAW" if cube.linear else "JPG"
+    print(f"Серия: {cube.count} спектров, кадр {cube.width}×{cube.height}, {kind}")
 
     request = ProcessingRequest(
         cube=cube, overlap=matrix, params=ProcessingParams(gaussian_sigma=args.sigma)
@@ -104,9 +115,21 @@ def _cube(args: argparse.Namespace) -> SpectralCube:
         print("Серия синтетическая: концентрации известны заранее")
         return data.reference_case().request.cube
 
-    series: Path = args.series
-    nested = series / "jpeg" / "1"
-    return load_cube(discover_frames(nested if nested.is_dir() else series))
+    return load_series(args.series, args.format)
+
+
+def load_series(series: Path, kind: str = "auto") -> SpectralCube:
+    """Собрать куб серии: кадры RAW, если они есть (или ``kind="raw"``), иначе JPG.
+
+    Понимает раскладку прибора (``raw/1``, ``jpeg/1``) и плоский каталог, как
+    ``source/`` зоны в хранилище рабочего места.
+    """
+    raw_dir = series / "raw" / "1" if (series / "raw" / "1").is_dir() else series
+    jpeg_dir = series / "jpeg" / "1" if (series / "jpeg" / "1").is_dir() else series
+    has_raw = raw_dir.is_dir() and any(path.suffix.lower() == ".dng" for path in raw_dir.iterdir())
+    if kind == "raw" or (kind == "auto" and has_raw):
+        return load_raw_cube(discover_raw_frames(raw_dir))
+    return load_cube(discover_frames(jpeg_dir))
 
 
 def find_reference(start: Path | None = None) -> Path | None:
@@ -183,7 +206,19 @@ def _save(result: ProcessingResult, out: Path, elapsed: float) -> None:
 
     for symbol, values in result.concentrations.items():
         _save_map(values, out / f"{symbol}.png")
-    _save_map(result.thb_map, out / "thb.png")
+    box = result.metrics.centre.box if result.metrics.centre is not None else None
+    if result.thb_scale is not None:
+        _save_colored(result.thb_map, result.thb_scale, "thb", box, out / "thb.png")
+    else:
+        _save_map(result.thb_map, out / "thb.png")
+    if result.oxygenation is not None and result.oxygenation_scale is not None:
+        _save_colored(
+            result.oxygenation,
+            result.oxygenation_scale,
+            "oxygenation",
+            box,
+            out / "oxygenation.png",
+        )
     Image.fromarray((result.lesion_mask * 255).astype(np.uint8)).save(out / "mask.png")
 
     summary = {
@@ -202,20 +237,52 @@ def _save(result: ProcessingResult, out: Path, elapsed: float) -> None:
         "пояснение": result.notes,
         "карты": sorted(result.concentrations),
     }
+    centre = result.metrics.centre
+    if centre is not None:
+        summary["центр кадра"] = {
+            "область (верх, лево, низ, право)": list(centre.box),
+            "THb": centre.thb,
+            "оксигенация": centre.oxygenation,
+        }
+    if result.oxygenation_scale is not None:
+        scale = result.oxygenation_scale
+        summary["шкала оксигенации"] = {"от": scale.low, "до": scale.high, "подпись": scale.label}
+    if result.thb_scale is not None:
+        scale = result.thb_scale
+        summary["шкала THb"] = {"от": scale.low, "до": scale.high, "подпись": scale.label}
     (out / "metrics.json").write_text(
         json.dumps(summary, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
 
 
-def _save_map(values: np.ndarray, path: Path) -> None:
-    """Сохранить карту в оттенках серого, растянув значения на весь диапазон.
+def _save_colored(
+    values: np.ndarray,
+    scale: DisplayScale,
+    palette: str,
+    box: tuple[int, int, int, int] | None,
+    path: Path,
+) -> None:
+    """Сохранить карту в цвете по шкале алгоритма, с рамкой центральной области."""
+    picture = colorize(values, scale, palette)
+    if box is not None:
+        picture = draw_region(picture, box)
+    Image.fromarray(picture).save(path)
 
-    Растяжение нужно для глаза: абсолютные значения концентраций малы, и без
-    него карта выглядит чёрным квадратом. Числа берутся из ``metrics.json``.
+
+def _save_map(values: np.ndarray, path: Path, limits: tuple[float, float] | None = None) -> None:
+    """Сохранить карту в оттенках серого.
+
+    Если алгоритм задал шкалу показа, карта рисуется в её пределах - тогда
+    карты разных снимков сравнимы между собой. Без шкалы значения растягиваются
+    на весь диапазон: абсолютные концентрации малы, и без этого карта выглядит
+    чёрным квадратом. Числа берутся из ``metrics.json``.
     """
     finite = values[np.isfinite(values)]
-    low = float(finite.min()) if finite.size else 0.0
-    high = float(finite.max()) if finite.size else 1.0
+    if limits is not None:
+        low, high = limits
+    else:
+        low = float(finite.min()) if finite.size else 0.0
+        high = float(finite.max()) if finite.size else 1.0
     span = high - low if high > low else 1.0
     levels = np.clip((values - low) / span, 0.0, 1.0) * 255.0
     Image.fromarray(levels.astype(np.uint8)).save(path)

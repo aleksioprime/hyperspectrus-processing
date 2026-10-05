@@ -488,6 +488,29 @@ def _check_result(result: ProcessingResult, cube: SpectralCube) -> None:
         assert np.isfinite(value), f"показатель {name} не число: {value}"
     assert metrics.s_coefficient >= 0.0, "коэффициент s отрицателен"
 
+    # Необязательные поля: алгоритм может их не заполнять, но заполненные обязаны
+    # быть пригодны к показу так же, как обязательные.
+    if result.oxygenation is not None:
+        _check_map(result.oxygenation, shape, "карта оксигенации")
+        assert result.oxygenation_scale is not None, "карта оксигенации без шкалы показа"
+
+    centre = metrics.centre
+    if centre is not None:
+        _, _, bottom, right = centre.box
+        assert bottom <= shape[0] and right <= shape[1], (
+            f"область {centre.box} выходит за кадр {shape}"
+        )
+        assert isinstance(centre.thb, float) and np.isfinite(centre.thb), (
+            f"средний THb по области не число: {centre.thb}"
+        )
+        if centre.oxygenation is not None:
+            assert isinstance(centre.oxygenation, float) and np.isfinite(centre.oxygenation), (
+                f"средняя оксигенация по области не число: {centre.oxygenation}"
+            )
+        assert (centre.oxygenation is None) == (result.oxygenation is None), (
+            "средняя оксигенация по области и карта оксигенации передаются только вместе"
+        )
+
     segmentation = result.segmentation
     assert segmentation.method.strip(), "способ выделения очага не назван"
     assert np.isfinite(segmentation.threshold), "порог выделения не число"

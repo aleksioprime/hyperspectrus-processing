@@ -18,11 +18,13 @@ from pathlib import Path
 import numpy as np
 from hsr_proc import (
     BoolMask,
+    DisplayScale,
     FloatMap,
     ProcessingMetrics,
     ProcessingRequest,
     ProcessingResult,
     ProgressCallback,
+    RegionMeans,
     SegmentationInfo,
     report,
 )
@@ -224,6 +226,64 @@ class СЧужойПодписью(ПравильнаяРеализация):
             processor="algo 1.0",
             notes=result.notes,
         )
+
+
+class СОксигенацией(ПравильнаяРеализация):
+    """Возвращает карту оксигенации и средние по центру - заполняет поля верно."""
+
+    name = "с-оксигенацией"
+
+    #: Что испортить в результате; у правильной реализации - ничего.
+    порча: str = ""
+
+    def process(
+        self, request: ProcessingRequest, progress: ProgressCallback | None = None
+    ) -> ProcessingResult:
+        """Обработать серию и добавить карту оксигенации."""
+        result = super().process(request, progress)
+        height, width = result.thb_map.shape
+        oxygenation = np.full((height, width), 90.0, dtype=np.float32)
+        box = (height // 4, width // 4, 3 * height // 4, 3 * width // 4)
+        if self.порча == "пропуск":
+            oxygenation[0, 0] = np.nan
+        if self.порча == "область":
+            box = (0, 0, height + 5, width)
+        top, left, bottom, right = box
+        centre = RegionMeans(
+            box=box,
+            thb=float(result.thb_map[top:bottom, left:right].mean()),
+            oxygenation=float(np.nanmean(oxygenation[top:bottom, left:right])),
+        )
+        return ProcessingResult(
+            concentrations=result.concentrations,
+            thb_map=result.thb_map,
+            lesion_mask=result.lesion_mask,
+            metrics=ProcessingMetrics(
+                s_coefficient=result.metrics.s_coefficient,
+                mean_lesion_thb=result.metrics.mean_lesion_thb,
+                mean_skin_thb=result.metrics.mean_skin_thb,
+                centre=centre,
+            ),
+            segmentation=result.segmentation,
+            processor=result.processor,
+            notes=result.notes,
+            oxygenation=oxygenation,
+            oxygenation_scale=DisplayScale(80.0, 100.0, "индекс оксигенации, усл. ед."),
+        )
+
+
+class СПропускомВОксигенации(СОксигенацией):
+    """Оставляет NaN в карте оксигенации."""
+
+    name = "пропуск-в-оксигенации"
+    порча = "пропуск"
+
+
+class СОбластьюЗаКадром(СОксигенацией):
+    """Возвращает центральную область, выходящую за кадр."""
+
+    name = "область-за-кадром"
+    порча = "область"
 
 
 def _total(concentrations: dict[str, FloatMap]) -> tuple[FloatMap, str]:
