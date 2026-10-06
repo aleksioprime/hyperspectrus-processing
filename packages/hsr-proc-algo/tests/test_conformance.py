@@ -6,7 +6,7 @@ from hsr_proc_algo import AlgoProcessor
 from hsr_proc_conformance import ProcessorConformance
 
 
-class TestАлгоритм(ProcessorConformance):
+class TestОксигенация(ProcessorConformance):
     """Проверки реализации перед передачей пакета."""
 
     processor = AlgoProcessor()

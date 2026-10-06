@@ -12,7 +12,6 @@ members = [
     "hsr-proc-algo",
     "hsr-proc-base",
     "hsr-proc-conformance",
-    "hsr-proc-oxy",
     "hyperspectrus-processing",
 ]
 
@@ -91,7 +90,7 @@ wheels = [
 
 [[package]]
 name = "hsr-proc-algo"
-version = "1.0.0"
+version = "1.1.0"
 source = { editable = "packages/hsr-proc-algo" }
 dependencies = [
     { name = "hsr-proc-base" },
@@ -161,34 +160,6 @@ requires-dist = [
 ]
 
 [[package]]
-name = "hsr-proc-oxy"
-version = "0.1.0"
-source = { editable = "packages/hsr-proc-oxy" }
-dependencies = [
-    { name = "hsr-proc-base" },
-    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
-    { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "hsr-proc-conformance" },
-    { name = "pytest" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "hsr-proc-base", editable = "packages/hsr-proc-base" },
-    { name = "numpy", specifier = ">=2.1" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "hsr-proc-conformance", editable = "conformance" },
-    { name = "pytest", specifier = ">=8.3" },
-]
-
-[[package]]
 name = "hyperspectrus-processing"
 version = "0.1.0"
 source = { virtual = "." }
@@ -198,7 +169,6 @@ dev = [
     { name = "hsr-proc-algo" },
     { name = "hsr-proc-base", extra = ["raw"] },
     { name = "hsr-proc-conformance" },
-    { name = "hsr-proc-oxy" },
     { name = "mypy" },
     { name = "pytest" },
     { name = "ruff" },
@@ -211,7 +181,6 @@ dev = [
     { name = "hsr-proc-algo", editable = "packages/hsr-proc-algo" },
     { name = "hsr-proc-base", extras = ["raw"], editable = "packages/hsr-proc-base" },
     { name = "hsr-proc-conformance", editable = "conformance" },
-    { name = "hsr-proc-oxy", editable = "packages/hsr-proc-oxy" },
     { name = "mypy", specifier = ">=1.14" },
     { name = "pytest", specifier = ">=8.3" },
     { name = "ruff", specifier = ">=0.9" },
