@@ -77,6 +77,23 @@ def test_имена_тестов_не_сталкиваются_с_прежним
     assert "test_newalgo_conformance.py" in names
 
 
+def test_имя_расчёта_в_тестах_новое(workspace: Path) -> None:
+    """Проверка имени реализации иначе требовала бы прежнее ``algo``."""
+    действующий = workspace / "packages" / "hsr-proc-algo" / "tests" / "test_processor.py"
+    действующий.write_text(
+        действующий.read_text(encoding="utf-8")
+        + "\n\ndef test_имя() -> None:\n"
+        + '    assert registry.get_processor("algo").name == "algo"\n',
+        encoding="utf-8",
+    )
+
+    package = new_algo.create("newalgo", root=workspace, blank=False)
+
+    тест = (package / "tests" / "test_newalgo_processor.py").read_text(encoding="utf-8")
+    assert '.name == "algo"' not in тест
+    assert '.name == "newalgo"' in тест
+
+
 def test_пакет_подключается_к_workspace(workspace: Path) -> None:
     """Без двух строк в корневом файле пакет не поставится."""
     new_algo.create("newalgo", root=workspace, blank=False)

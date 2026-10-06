@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import importlib.util
+import re
 import shutil
 import sys
 from pathlib import Path
@@ -40,6 +41,19 @@ def workspace(tmp_path: Path) -> Path:
         tmp_path / "packages" / "hsr-proc-algo",
         ignore=shutil.ignore_patterns("__pycache__", ".pytest_cache"),
     )
+    # Версия основного расчёта в репозитории растёт с каждой заменой, а тесты
+    # заменяют его на 1.1: без закреплённой 1.0 они ломались бы после первой же.
+    processor = tmp_path / "packages" / "hsr-proc-algo" / "src" / "hsr_proc_algo" / "processor.py"
+    processor.write_text(
+        re.sub(
+            r'^    version = "[^"]+"',
+            '    version = "1.0"',
+            processor.read_text(encoding="utf-8"),
+            count=1,
+            flags=re.M,
+        ),
+        encoding="utf-8",
+    )
     (tmp_path / "pyproject.toml").write_text(
         '[dependency-groups]\ndev = [\n    "hsr-proc-algo",\n]\n\n'
         "[tool.uv.sources]\nhsr-proc-algo = { workspace = true }\n",
@@ -65,6 +79,24 @@ def test_расчёт_становится_основным(workspace: Path) -> 
     assert '    name = "algo"' in processor
     assert '    version = "1.1"' in processor
     assert not (workspace / "packages" / "hsr-proc-demo").exists()
+
+
+def test_реализация_находится_по_точке_входа(workspace: Path) -> None:
+    """Вспомогательный класс перед реализацией не должен занять её имя."""
+    demo = workspace / "packages" / "hsr-proc-demo" / "src" / "hsr_proc_demo" / "processor.py"
+    text = demo.read_text(encoding="utf-8")
+    text = text.replace(
+        "class DemoProcessor:", "class _Maps:\n    pass\n\n\nclass DemoProcessor:", 1
+    )
+    demo.write_text(text, encoding="utf-8")
+
+    promote_algo.promote("demo", version="1.1", root=workspace)
+
+    processor = (
+        workspace / "packages" / "hsr-proc-algo" / "src" / "hsr_proc_algo" / "processor.py"
+    ).read_text(encoding="utf-8")
+    assert "class _Maps:" in processor
+    assert "class AlgoProcessor:" in processor
 
 
 def test_пакет_источник_отключается_от_workspace(workspace: Path) -> None:
@@ -95,12 +127,24 @@ def test_зависимости_расчёта_переносятся(workspace:
 
 def test_имя_и_версия_в_тестах_обновляются(workspace: Path) -> None:
     """Проверка подписи результата иначе осталась бы требовать прежние."""
+    # Строки дописываются здесь, а не ищутся в тестах действующего расчёта:
+    # тот меняется с каждой заменой, и проверять в нём нечего.
+    тест = workspace / "packages" / "hsr-proc-demo" / "tests" / "test_demo_processor.py"
+    тест.write_text(
+        тест.read_text(encoding="utf-8")
+        + "\n\ndef test_подпись() -> None:\n"
+        + '    assert registry.get_processor("demo").name == "demo"\n'
+        + '    assert result.processor == "demo 0.1"\n',
+        encoding="utf-8",
+    )
+
     promote_algo.promote("demo", version="1.1", root=workspace)
 
     тесты = workspace / "packages" / "hsr-proc-algo" / "tests"
     подпись = (тесты / "test_processor.py").read_text(encoding="utf-8")
     assert '"algo 1.1"' in подпись
-    assert 'get_processor("algo")' in подпись
+    assert 'get_processor("algo").name == "algo"' in подпись
+    assert '"demo' not in подпись
     assert not list(тесты.glob("test_demo_*.py"))
 
 

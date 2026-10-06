@@ -228,6 +228,7 @@ def _write_tests(package: Path, *, name: str, module: str, cls: str, blank: bool
         text = _rename(text, module=module, cls=cls)
         text = text.replace("AlgoProcessor()", f"{cls}()")
         text = text.replace('get_processor("algo")', f'get_processor("{name}")')
+        text = text.replace('.name == "algo"', f'.name == "{name}"')
         text = text.replace('"algo 1.0"', f'"{name} 0.1"')
         path.write_text(text, encoding="utf-8")
         path.rename(renamed)

@@ -20,6 +20,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tomllib
 from pathlib import Path
 
 #: Пакет, который уезжает в приложение.
@@ -77,7 +78,7 @@ def promote(name: str, *, version: str, root: Path) -> None:
     if source == target:
         raise ValueError("этот расчёт уже основной")
 
-    cls = _class_name(source / "src" / module / "processor.py")
+    cls = _class_name(source / "pyproject.toml", name=name)
     was = _current_version(source / "src" / module / "processor.py")
     _replace_sources(source / "src" / module, target / "src" / TARGET_MODULE, cls=cls, name=name)
     _replace_tests(
@@ -144,12 +145,22 @@ def _current_version(processor: Path) -> str:
     return found.group(1) if found else "0"
 
 
-def _class_name(processor: Path) -> str:
-    """Найти имя класса реализации в пакете-источнике."""
-    found = re.search(r"^class (\w+):", processor.read_text(encoding="utf-8"), re.M)
-    if found is None:
-        raise ValueError(f"в {processor} не найден класс реализации")
-    return found.group(1)
+def _class_name(pyproject: Path, *, name: str) -> str:
+    """Найти имя класса реализации по точке входа пакета-источника.
+
+    Первый класс в ``processor.py`` им быть не обязан: перед реализацией
+    нередко стоит вспомогательный, и замена переименовала бы не тот.
+    """
+    entry_points = (
+        tomllib.loads(pyproject.read_text(encoding="utf-8"))
+        .get("project", {})
+        .get("entry-points", {})
+        .get("hsr_proc.processors", {})
+    )
+    target = entry_points.get(name.replace("-", "_"))
+    if target is None or ":" not in target:
+        raise ValueError(f"в {pyproject} не найдена точка входа расчёта {name}")
+    return str(target).split(":", 1)[1]
 
 
 def _rewrite(text: str, *, cls: str, name: str, module: str | None = None) -> str:
@@ -197,6 +208,7 @@ def _replace_tests(
         text = _rewrite(path.read_text(encoding="utf-8"), cls=cls, name=name, module=module)
         short = ".".join(version.split(".")[:2])
         text = text.replace(f'get_processor("{name}")', f'get_processor("{TARGET_NAME}")')
+        text = text.replace(f'.name == "{name}"', f'.name == "{TARGET_NAME}"')
         text = text.replace(f'"{name} {was}"', f'"{TARGET_NAME} {short}"')
         (target / renamed).write_text(text, encoding="utf-8")
 
